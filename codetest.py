@@ -60,7 +60,7 @@ BASE_URL = "https://api.thingspeak.com/update?api_key={}".format(WRITE_API)
 #pts_source = np.float32([[440, 563], [1602, 545], [1625, 881], [428, 908]])
 #pts_source = np.float32([[466, 684], [1540, 656], [1566, 973], [455, 984]])
 #pts_source = np.float32([[511, 722], [1530, 689], [1583, 966], [491, 975]])
-pts_source = np.float32([[274, 625], [1406, 639], [1407, 976], [261, 959]])
+pts_source = np.float32([[390, 333], [1764, 313], [1764, 724], [375, 685]])
 #pts_source = np.float32([[447, 365], [1722, 374], [1722, 719], [436, 675]]) # Parijat Coordinates : 34530.5
 #pts_source = np.float32([[209, 359], [1436, 388], [1444,735], [209, 710]])  # PH03 Coordinates : 971.0
 #pts_source = np.float32([[143, 241], [1378, 213], [1391, 558], [180, 604]]) # PH02 Coordinates: 1372.9
@@ -142,7 +142,7 @@ def cam(save_path):
 def func(save_path, Filename):
 
     global cons
-    img = sio.imread("/home/pi/Desktop/Water_Images/img2021-08-25-11-43-22.jpg") # Parijat
+    img = sio.imread("/home/pi/Desktop/img2021-08-05-22-52-56.jpg") # Parijat
     #img = sio.imread("/home/pi/Desktop/img2021-08-17-14-13-32.jpg") # PH-03
     #img = sio.imread("/home/pi/Desktop/img2021-08-17-14-12-23.jpg") # PH-02
     #img =  sio.imread("/home/pi/Desktop/img2021-08-18-21-16-06.jpg")# PH_03 New
@@ -187,7 +187,7 @@ def func(save_path, Filename):
 #     if cons==0:
     stored_value.append(result)
     i=0
-    pdb.set_trace()
+#     pdb.set_trace()
     str_current = str(stored_value[-1])
     str_prev = str(stored_value[-2])
     print(len(str_prev))
@@ -399,7 +399,7 @@ def main():
             
             Filename.append(str(datetime.datetime.now().strftime("img%Y-%m-%d-%H-%M-%S") + ".jpg"))
             #attach_file_name = device_id+ ' '+ Filename
-            save_path = '/home/pi/Desktop/Water_Images/' + str(Filename[-1])
+            save_path = '/home/pi/Desktop/trial_image/' + str(Filename[-1])
             
             cam(save_path)
             time.sleep(3)
@@ -427,7 +427,7 @@ if __name__ == '__main__':
     cons = 0
     f_rate = deque(5*[0], 5)
     Filename = deque(5*[0], 5)
-    stored_value.append(10978.5)
+    stored_value.append(33875.2)
     #stored_value.append(34528.5) #Parijat
     #stored_value.append(972.4) # PH03
     #stored_value.append(646.5)
@@ -436,7 +436,7 @@ if __name__ == '__main__':
     #Filename.append("img2021-08-17-14-13-32.jpg") # PH-03
     #Filename.append("img2021-08-17-14-12-23.jpg") # PH02
     #Filename.append("img2021-08-18-21-16-06.jpg")
-    Filename.append("img2021-08-25-11-50-22.jpg")
+    Filename.append("img2021-08-05-22-52-56.jpg")
     main()
     
 
