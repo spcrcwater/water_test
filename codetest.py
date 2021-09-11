@@ -392,7 +392,7 @@ def func(save_path, Filename):
 
 def main():
     try:
-        while True:
+        #while True:
             # set LED high
             print("Setting high - LED ON")
             GPIO.output(relay_pin, GPIO.HIGH)
