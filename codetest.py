@@ -22,6 +22,8 @@ from picamera import PiCamera
 import json
 import requests
 import smtplib
+import socket
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -406,9 +408,16 @@ def main():
             # set LED low
             print("Setting low - LED OFF")
             GPIO.output(relay_pin, GPIO.LOW)
-            
-#             send_email(sender_address,sender_pass,receiver_address,subject_text,save_path,Filename)
-            
+	    REMOTE_SERVER = "one.one.one.one"
+            try:
+	        host = socket.gethostbyname(hostname)
+		s = socket.create_connection((host, 80), 2)
+   		s.close()
+	    	send_email(sender_address,sender_pass,receiver_address,subject_text,save_path,Filename) 
+	    				                   	              			          
+            except:
+		pass
+		print(" ")
              
             daterec = []
             func(save_path, Filename)
