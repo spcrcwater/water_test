@@ -358,38 +358,37 @@ def func(save_path, Filename):
 #  
     
 
-# def send_email(sender_address,sender_pass,receiver_address,subject_text,save_path, Filename):
-# 
-#     #Setup the MIME
-#     message = MIMEMultipart()
-#     message['Subject'] = subject_text
-#     message['From'] = sender_address
-#     message['To'] = receiver_address
-# 
-# 
-#     #The body and the attachments for the mail
-#     message.attach(MIMEText(mail_content, 'plain'))
-#     attach_file = open(save_path, 'rb') # Open the file as binary mode
-#     data = attach_file.read()
-#     payload = MIMEBase('application', "octet-stream")
-#     payload.set_payload(data)
-#     encoders.encode_base64(payload) #encode the attachment
-#     #add payload header with filename
-#     payload.add_header("Content-Disposition", 'attachment', filename=Filename[-1])
-#     message.attach(payload)
-# 
-# 
-#     #Create SMTP session for sending the mail
-#     try:
-#         session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
-#         session.starttls() #enable security
-#         session.login(sender_address, sender_pass) #login with mail_id and password
-#         text = message.as_string()
-#         session.sendmail(sender_address, receiver_address, text)
-#         session.quit()
-#         #os.remove(attach_file_name)
-#     except:
-#         print ("Error: unable to send email")
+def send_email(sender_address,sender_pass,receiver_address,subject_text,save_path, Filename):
+ 
+     #Setup the MIME
+    message = MIMEMultipart()
+    message['Subject'] = subject_text
+     message['From'] = sender_address
+     message['To'] = receiver_address
+
+     #The body and the attachments for the mail
+     message.attach(MIMEText(mail_content, 'plain'))
+     attach_file = open(save_path, 'rb') # Open the file as binary mode
+     data = attach_file.read()
+     payload = MIMEBase('application', "octet-stream")
+     payload.set_payload(data)
+     encoders.encode_base64(payload) #encode the attachment
+     #add payload header with filename
+     payload.add_header("Content-Disposition", 'attachment', filename=Filename[-1])
+     message.attach(payload)
+ 
+ 
+     #Create SMTP session for sending the mail
+     try:
+         session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
+         session.starttls() #enable security
+         session.login(sender_address, sender_pass) #login with mail_id and password
+         text = message.as_string()
+         session.sendmail(sender_address, receiver_address, text)
+         session.quit()
+         #os.remove(attach_file_name)
+     except:
+         print ("Error: unable to send email")
 
 
 def main():
