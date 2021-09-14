@@ -10,6 +10,7 @@ from skimage.transform import resize
 from skimage.feature import hog
 from skimage.color import rgb2gray
 #from train import detect
+import subprocess
 from imutils.contours import sort_contours
 import joblib
 import time
@@ -23,7 +24,6 @@ import json
 import requests
 import smtplib
 import socket
-
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -46,26 +46,14 @@ import pdb
 all the present logic here
 
 '''
-
-
 relay_pin = 23
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(relay_pin, GPIO.OUT)
-camera = PiCamera()
-camera.start_preview()
+# camera = PiCamera()
 WRITE_API = "XWE9QUGYLIPCHFAJ" # Write API of Himalaya_parking
 BASE_URL = "https://api.thingspeak.com/update?api_key={}".format(WRITE_API)
 # Meter coordinates, starting from top-left in clockwise manner
-#pts_source = np.float32([[520,641], [1565, 623], [1604, 905], [513, 915]])
-#pts_source = np.float32([[498, 767], [1590, 767], [1610,1049], [491,1045]])
-#pts_source = np.float32([])
-#pts_source = np.float32([[440, 563], [1602, 545], [1625, 881], [428, 908]])
-#pts_source = np.float32([[466, 684], [1540, 656], [1566, 973], [455, 984]])
-#pts_source = np.float32([[511, 722], [1530, 689], [1583, 966], [491, 975]])
-pts_source = np.float32([[390, 333], [1764, 313], [1764, 724], [375, 685]])
-#pts_source = np.float32([[447, 365], [1722, 374], [1722, 719], [436, 675]]) # Parijat Coordinates : 34530.5
-#pts_source = np.float32([[209, 359], [1436, 388], [1444,735], [209, 710]])  # PH03 Coordinates : 971.0
-#pts_source = np.float32([[143, 241], [1378, 213], [1391, 558], [180, 604]]) # PH02 Coordinates: 1372.9
+pts_source = np.float32([[391,311], [1747,319], [1750, 715], [389,685]])
 width, height = 650, 215
 pts_dst = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
 MIN_CONTOUR_AREA = 1500
@@ -74,6 +62,15 @@ RESIZED_IMAGE_HEIGHT = 90
 CROP_COORD = 540
 memory_path = "/home"
 
+def checkInternetSocket(host="8.8.8.8", port=53, timeout=3):
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except socket.error as ex:
+        print(ex)
+        return False
+    
 def get_time():
     # Get time stamp
     ct = datetime.datetime.now()
@@ -81,6 +78,21 @@ def get_time():
     str(ct.hour) + ':' + str(ct.minute) + ':' + str(ct.second))
     return time_stamp
 
+def wait():
+    # calculate the delay to the start of next minute
+    next_minute =(datetime.datetime.now() + timedelta(seconds=30))
+    delay = (next_minute - datetime.datetime.now()).seconds
+    time.sleep(delay)
+    
+def cam(save_path):
+    camera = PiCamera()
+    camera.start_preview()
+    time.sleep(2)
+    camera.capture(save_path)
+    print('Captured')
+    camera.stop_preview()
+    camera.close()
+    
 device_id = "Dummy"
 time_stamp = get_time()
 mail_content = time_stamp
@@ -90,18 +102,8 @@ sender_pass = 'sender@1234'
 receiver_address = 'hparking.receiver@gmail.com'
 subject_text =  device_id
 attach_file_name = time_stamp + '.jpg'
-save_path = '/home/pi/Desktop/Water_Images/' + attach_file_name
-
-
-
-def wait():
-    # calculate the delay to the start of next minute
-    #next_minute =
-    next_minute =(datetime.datetime.now() + timedelta(seconds=30))
-    delay = (next_minute - datetime.datetime.now()).seconds
-    time.sleep(delay)
-
-
+save_path = '/home/pi/Desktop/images/' + attach_file_name
+    
 def get_sorted_contour(img):
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # img_gray = cv2.GaussianBlur(img_gray, (9, 9), 0)
@@ -134,21 +136,12 @@ def get_sorted_contour(img):
     plt.show()
     return contours
 
-def cam(save_path):
-    #Filename = str("img" + datetime.now().strftime(":%Y-%m-%d-%H-%M-%S") + ".jpg")
-    time.sleep(2)
-    camera.capture(save_path)
-    print('Captured')
-    
-    
-def func(save_path, Filename):
 
+def func(save_path, Filename):
     global cons
-    img = sio.imread("/home/pi/Desktop/img2021-08-05-22-52-56.jpg") # Parijat
-    #img = sio.imread("/home/pi/Desktop/img2021-08-17-14-13-32.jpg") # PH-03
-    #img = sio.imread("/home/pi/Desktop/img2021-08-17-14-12-23.jpg") # PH-02
-    #img =  sio.imread("/home/pi/Desktop/img2021-08-18-21-16-06.jpg")# PH_03 New
-    #img =  sio.imread("/home/pi/Desktop/img2021-08-18-21-16-13.jpg") #Himalaya RF_1
+   
+    #img = sio.imread(save_path) 
+    img = sio.imread("/home/pi/Desktop/images/img2021-08-05-22-52-56.jpg") 
     plt.imshow(img)
     plt.show()
     matrix = cv2.getPerspectiveTransform(pts_source, pts_dst)
@@ -186,10 +179,9 @@ def func(save_path, Filename):
     print("detected value:", result)
     time =  Filename[-1][3:-4]
     time = datetime.datetime.strptime(time, '%Y-%m-%d-%H-%M-%S')
-#     if cons==0:
     stored_value.append(result)
     i=0
-#     pdb.set_trace()
+#   pdb.set_trace()
     str_current = str(stored_value[-1])
     str_prev = str(stored_value[-2])
     print(len(str_prev))
@@ -233,13 +225,11 @@ def func(save_path, Filename):
     print("dif=", stored_value[-2] - stored_value[-1])
     if cons >=0:
         if stored_value[-2] - stored_value[-1] >=0 :
-            #stored_value.append(stored_value[-2])
             stored_value[-1]=stored_value[-2]
             print("Lesser")
             f_rate.append(0)
         elif  stored_value[-1] > stored_value[-2]:
             difference = stored_value[-1] - stored_value[-2]
-            #time_difference = img_time - time_plot[-1]
             F1 = Filename[-1][3:-4]
             F2 = Filename[-2][3:-4]
             f1 = datetime.datetime.strptime(F1, '%Y-%m-%d-%H-%M-%S')
@@ -247,40 +237,8 @@ def func(save_path, Filename):
             time_difference = (f1 - f2)
             p_sec = (time_difference.seconds) / 60
             r = difference/p_sec
-             
-#             if (r<1):
-                #stored_value.append(result)
             f_rate.append(r)
-#             else:
-#                 #pass
-#                 #return None
-#                 stored_value[-1] = stored_value[-2]
-#                 print(" ")
-    #imgp_plot = img_path[8:-4]
-    #img_time_plot = datetime.datetime.strptime(imgp_plot, '%m-%d-%H-%M-%S')
-    #time_plot_new.append("Mar-" + str(img_time_plot.day) )
-    #time_plot.append(img_time)
-    #daterec.append(img_path)
-    #if ((stored_value[-2] - stored_value[-1] >= 100 or stored_value[-2] - stored_value[-1] <=  -100) and cons == 0):
-        #stored_value[-1] = (stored_value[-1] + (stored_value[-2] -  stored_value[-1]))
-#     i=0
-#     #k = 6
-#     str_current = str(stored_value[-1])
-#     str_prev = str(stored_value[-2])
-#     print(len(str_prev))
-#     k=len(str_prev)-3
-#     pdb.set_trace()
-#     print(stored_value[-1])
-#     print(stored_value[-2])
-#     print(stored_value[-2] - stored_value[-1])
-#     while((stored_value[-2]-stored_value[-1]>=100 or stored_value[-2]-stored_value[-1]<=-100 ) and (k >= 2)):
-#         current_value = int(str_current[i])
-#         prev_value = int(str_prev[i])
-#         if(current_value - prev_value != 0):
-#             current_value =  prev_value- current_value
-#             stored_value[-1] = stored_value[-1] + (current_value * 10**k)
-#         i+=1
-#         k-=1
+
     #pdb.set_trace()
     print(stored_value[-1])
     print(stored_value[-2])
@@ -290,42 +248,70 @@ def func(save_path, Filename):
     result_file = open('Himalaya_RF_1_Volume.txt', 'a')
     result_file.writelines([str(time)  + ' ' + str(stored_value[-1]) + '\n'])
     result_file.close()
+    
     print(stored_value[-2]- stored_value[-1])
     print(stored_value)
-    #print(f_rate)
+   
     
     result_file = open('Himalaya_RF_1_Rate.txt', 'a')
     result_file.writelines([str(time)  + ' ' + str(f_rate[-1]) + '\n'])
     result_file.close()
-    
-    
     
     print("Thingspeak begins")
     thingspeakHttp1 = BASE_URL + "&field1={:f}".format(stored_value[-1])
     try:
         conn = urlopen(thingspeakHttp1)
         conn = urllib.request.urlopen(thingspeakHttp1)
-        print("sent to thingspeak volume")
+        print("water volume updated on thingspeak")
         conn.close()
-        #sleep(5)
     except:
-        print("not sent")
+        print("water volume not updated on thingspeak")
+    
     if (cons >= 0):
         print(f_rate[-1])
         thingspeakHttp2 = BASE_URL + "&field2={:f}".format(f_rate[-1])
         try:
             conn = urlopen(thingspeakHttp2)
             conn = urllib.request.urlopen(thingspeakHttp2)
-            print("sent to thingspeak rate")
+            print("flow rate updated on thingspeak")
             conn.close()
-            #sleep(5)
         except:
-            print("not sent")
+            print("flow rate not updated on thingspeak")
     cons+= 1
     #print(cons)
-            
-        
 
+
+def send_email(sender_address,sender_pass,receiver_address,subject_text,save_path, Filename):
+    #Setup the MIME
+    message = MIMEMultipart()
+    message['Subject'] = subject_text
+    message['From'] = sender_address
+    message['To'] = receiver_address
+
+     #The body and the attachments for the mail
+    message.attach(MIMEText(mail_content, 'plain'))
+    attach_file = open(save_path, 'rb') # Open the file as binary mode
+    data = attach_file.read()
+    payload = MIMEBase('application', "octet-stream")
+    payload.set_payload(data)
+    encoders.encode_base64(payload) #encode the attachment
+    #add payload header with filename
+    payload.add_header("Content-Disposition", 'attachment', filename=Filename[-1])
+    message.attach(payload)
+ 
+    #Create SMTP session for sending the mail
+    try:
+        session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
+        session.starttls() #enable security
+        session.login(sender_address, sender_pass) #login with mail_id and password
+        text = message.as_string()
+        session.sendmail(sender_address, receiver_address, text)
+        session.quit()
+        #os.remove(attach_file_name)
+    except:
+        print ("Error: unable to send email")
+
+            
 #     xvalue = []
 #     plt.rcParams.update({'font.size': 18})
 #     plt.plot(time_plot_new , stored_value, linewidth=2)
@@ -355,95 +341,45 @@ def func(save_path, Filename):
 #     plt.xlabel("Time ", fontsize=22)
 #     plt.ylabel("Kilolitre/minute", fontsize=22)
 #     plt.show()
-#  
-    
-
-def send_email(sender_address,sender_pass,receiver_address,subject_text,save_path, Filename):
- 
-     #Setup the MIME
-    message = MIMEMultipart()
-    message['Subject'] = subject_text
-     message['From'] = sender_address
-     message['To'] = receiver_address
-
-     #The body and the attachments for the mail
-     message.attach(MIMEText(mail_content, 'plain'))
-     attach_file = open(save_path, 'rb') # Open the file as binary mode
-     data = attach_file.read()
-     payload = MIMEBase('application', "octet-stream")
-     payload.set_payload(data)
-     encoders.encode_base64(payload) #encode the attachment
-     #add payload header with filename
-     payload.add_header("Content-Disposition", 'attachment', filename=Filename[-1])
-     message.attach(payload)
- 
- 
-     #Create SMTP session for sending the mail
-     try:
-         session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
-         session.starttls() #enable security
-         session.login(sender_address, sender_pass) #login with mail_id and password
-         text = message.as_string()
-         session.sendmail(sender_address, receiver_address, text)
-         session.quit()
-         #os.remove(attach_file_name)
-     except:
-         print ("Error: unable to send email")
-
+  
 
 def main():
     try:
-        #while True:
-            # set LED high
+        while True:
+        # set LED high
+            print ("start")
+            subprocess.call("/home/pi/Desktop/waterspcrc/Ph-03/run_cmd_bash.sh")
+            print ("end")
             print("Setting high - LED ON")
             GPIO.output(relay_pin, GPIO.HIGH)
-            
             Filename.append(str(datetime.datetime.now().strftime("img%Y-%m-%d-%H-%M-%S") + ".jpg"))
-            #attach_file_name = device_id+ ' '+ Filename
-            save_path = '/home/pi/Desktop/trial_image/' + str(Filename[-1])
-            
+            save_path = '/home/pi/Desktop/images/' + str(Filename[-1])
             cam(save_path)
             time.sleep(3)
             # set LED low
             print("Setting low - LED OFF")
             GPIO.output(relay_pin, GPIO.LOW)
-	    REMOTE_SERVER = "one.one.one.one"
-            try:
-	        host = socket.gethostbyname(hostname)
-		s = socket.create_connection((host, 80), 2)
-   		s.close()
-	    	send_email(sender_address,sender_pass,receiver_address,subject_text,save_path,Filename) 
-	    				                   	              			          
-            except:
-		pass
-		print(" ")
-             
+            check = checkInternetSocket(host="8.8.8.8", port=53, timeout=3)
+            if(check==True):
+                send_email(sender_address,sender_pass,receiver_address,subject_text,save_path,Filename) 
+            else:
+                print("mail not sent")
             daterec = []
             func(save_path, Filename)
-         
             #os.remove(Filename)
             #os.remove(save_path)
             wait()
     except KeyboardInterrupt:
         GPIO.cleanup()
     finally:
-        camera.stop_preview()
-        camera.close()
-     
+        print("executed successfully")
+
 if __name__ == '__main__':
     stored_value = deque(5*[0], 5) # creating list 
     cons = 0
     f_rate = deque(5*[0], 5)
     Filename = deque(5*[0], 5)
-    stored_value.append(33875.2)
-    #stored_value.append(34528.5) #Parijat
-    #stored_value.append(972.4) # PH03
-    #stored_value.append(646.5)
-    #stored_value.append(56996.6)
-    #Filename.append("img2021-08-17-14-12-36.jpg")# Parijat
-    #Filename.append("img2021-08-17-14-13-32.jpg") # PH-03
-    #Filename.append("img2021-08-17-14-12-23.jpg") # PH02
-    #Filename.append("img2021-08-18-21-16-06.jpg")
+    stored_value.append(33875.3)
     Filename.append("img2021-08-05-22-52-56.jpg")
     main()
     

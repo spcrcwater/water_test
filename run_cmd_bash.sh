@@ -1,12 +1,10 @@
 #!/bin/bash
-while :
-do
+
 wget -q --spider http://google.com
 
 if [ $? -eq 0 ]; then
+    cd /home/pi/Desktop/waterspcrc/Ph-03/
     git pull 
-    python3 codetest.py
 else
-    python3 codetest.py
+    continue
 fi
-done
