@@ -186,10 +186,10 @@ def get_sorted_contour(img):
     kernel = np.ones((3,3),np.uint8)
     thresh = cv2.dilate(thresh,kernel,iterations = 5)
     thresh = cv2.erode(thresh,kernel,iterations = 2)
-    plt.figure()
-    plt.imshow(thresh)
-    plt.title("Threshold Image")
-    plt.show()
+    #plt.figure()
+    #plt.imshow(thresh)
+    #plt.title("Threshold Image")
+    #plt.show()
     contours, hierachy = cv2.findContours(thresh, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
     contours, bbox = sort_contours(contours)
     contours = [contour for contour in contours if cv2.contourArea(contour) >= MIN_CONTOUR_AREA]
@@ -201,10 +201,10 @@ def get_sorted_contour(img):
         (intX+intW,intY+intH), # lower right corner
         (0, 0, 255), # red
         3) # thickness
-    plt.figure()
-    plt.imshow(img)
-    plt.title("Detected Contours")
-    plt.show()
+    #plt.figure()
+    #plt.imshow(img)
+    #plt.title("Detected Contours")
+    #plt.show()
     return contours
 
 
@@ -212,15 +212,15 @@ def func(save_path, Filename):
     global cons
 #   img = sio.imread(save_path) 
     img = sio.imread("/home/pi/Desktop/images/img2021-08-05-22-52-56.jpg") 
-    plt.imshow(img)
-    plt.show()
+    #plt.imshow(img)
+    #plt.show()
     matrix = cv2.getPerspectiveTransform(pts_source, pts_dst)
     img_meter = cv2.warpPerspective(img, matrix, (width, height))
     img_meter = img_meter[:, :CROP_COORD]
     #img_meter = img	# If you need to detect digits without coordinates, then comment above line and uncomment current line.
-    plt.imshow(img_meter)
-    plt.title("Extracted Meter")
-    plt.show()
+    #plt.imshow(img_meter)
+    #plt.title("Extracted Meter")
+    #plt.show()
     
     contours = get_sorted_contour(img_meter.copy())
     model = joblib.load('rf_rasp_classifier.sav') # 
