@@ -34,13 +34,78 @@ import shutil
 from collections import deque
 import csv
 import pdb
+import config_WM
+
+
+def access_csv(device_id, column):
+    li=[]
+    with open('configs.csv') as csvfile:
+        content = csv.reader(csvfile)
+        header = next(content)
+        for row in content:
+            if row[0] == device_id:
+                myList = row
+        
+    head = header.index(column)
+    try:
+        return json.loads(myList[head])
+    except:
+        return myList[head]
+
+#data = access_csv('Dummy', 'Ireading')
 
 '''
 1. URI-THe path in OM2M
 2. Headers--auth key,data format inforamtion,
 3. actual request--post you will get a response which is http response ---201=Success
 '''
+def create_data_cin( uri_cnt, value, cin_labels="", fmt_ex="json"):
+    """
+        Method description:
+        Creates a data content instance(data_CIN) in the OneM2M framework/tree
+        under the specified DATA CON
+        Parameters:
+        uri_cnt : [str] URI for the parent DATA CON
+        fmt_ex : [str] payload format (json/XML)
+    """
 
+    headers = {
+        'X-M2M-Origin': '{}:{}'.format(
+            "devtest",
+            "devtest"
+        ),
+        'Content-type': 'application/{};ty=4; charset=utf-8'.format(fmt_ex)
+    }
+
+    payload = {
+        "m2m:cin": {
+            "con": "{}".format(value),
+            # "con": (
+            #     json.dumps(value)
+            #     if fmt_ex == 'json'
+            #     else "{}".format(value)
+            # ),
+            "lbl": cin_labels,
+            "cnf": "text"
+        }
+    }
+
+
+    try:
+        response = requests.post(uri_cnt, json=payload, headers=headers
+                                 )
+    except TypeError:
+        response = requests.post(uri_cnt, data=json.dumps(payload),
+                                 headers=headers)
+    cin = None
+    success = False
+    if response.ok:
+        cin = json.loads(response.content)['m2m:cin']['rn']
+        success = True
+
+    # _log.debug('Return code : {}'.format(response.status_code))
+    # _log.debug('Return Content : {}'.format(response.text))
+    return success, response.status_code, cin
 
 '''
 all the present logic here
@@ -50,10 +115,10 @@ relay_pin = 23
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(relay_pin, GPIO.OUT)
 # camera = PiCamera()
-WRITE_API = "XWE9QUGYLIPCHFAJ" # Write API of Himalaya_parking
+WRITE_API = access_csv(config_WM.device_id, "write_api")               #config_WM.write_api		# Write API of Himalaya_parking
 BASE_URL = "https://api.thingspeak.com/update?api_key={}".format(WRITE_API)
 # Meter coordinates, starting from top-left in clockwise manner
-pts_source = np.float32([[391,311], [1747,319], [1750, 715], [389,685]])
+pts_source = np.float32(access_csv(config_WM.device_id, "pts_source"))	#[[391,311], [1747,319], [1750, 715], [389,685]])
 width, height = 650, 215
 pts_dst = np.float32([[0, 0], [width, 0], [width, height], [0, height]])
 MIN_CONTOUR_AREA = 1500
@@ -80,7 +145,7 @@ def get_time():
 
 def wait():
     # calculate the delay to the start of next minute
-    next_minute =(datetime.datetime.now() + timedelta(seconds=30))
+    next_minute =(datetime.datetime.now() + timedelta(seconds=25))
     delay = (next_minute - datetime.datetime.now()).seconds
     time.sleep(delay)
     
@@ -93,13 +158,19 @@ def cam(save_path):
     camera.stop_preview()
     camera.close()
     
-device_id = "Dummy"
+device_id = config_WM.device_id		#"PH-03"
 time_stamp = get_time()
 mail_content = time_stamp
-#The mail addresses and password
-sender_address = 'hparking.sender@gmail.com'
-sender_pass = 'sender@1234'
-receiver_address = 'hparking.receiver@gmail.com'
+#mail addresses and password
+'''
+sender_address = 'bawankarnilesh1420@gmail.com'
+sender_pass = 'Nilesh@14'
+receiver_address = 'twosixeight969@gmail.com'
+'''
+sender_address = access_csv(config_WM.device_id, "sender_address")
+sender_pass = access_csv(config_WM.device_id, "sender_pass")
+receiver_address = access_csv(config_WM.device_id, "receiver_address")
+
 subject_text =  device_id
 attach_file_name = time_stamp + '.jpg'
 save_path = '/home/pi/Desktop/images/' + attach_file_name
@@ -139,21 +210,21 @@ def get_sorted_contour(img):
 
 def func(save_path, Filename):
     global cons
-   
-    #img = sio.imread(save_path) 
+#   img = sio.imread(save_path) 
     img = sio.imread("/home/pi/Desktop/images/img2021-08-05-22-52-56.jpg") 
     plt.imshow(img)
     plt.show()
     matrix = cv2.getPerspectiveTransform(pts_source, pts_dst)
     img_meter = cv2.warpPerspective(img, matrix, (width, height))
     img_meter = img_meter[:, :CROP_COORD]
+    #img_meter = img	# If you need to detect digits without coordinates, then comment above line and uncomment current line.
     plt.imshow(img_meter)
     plt.title("Extracted Meter")
     plt.show()
     
     contours = get_sorted_contour(img_meter.copy())
-    model = joblib.load('rf_rasp_classifier.sav') # if raspberrypi is 64 bits then use "Knn_classifier.sav" else if 32 bits then use "Knn_classifier(1).sav
-            #model = joblib.load('knn_classifier.sav')
+    model = joblib.load('rf_rasp_classifier.sav') # 
+            
     result = ''
     for contour in contours:
         [intX, intY, intW, intH] = cv2.boundingRect(contour)
@@ -205,8 +276,7 @@ def func(save_path, Filename):
             str_prev=('000'+str_prev)
         elif(len(str_prev)==4):
             str_prev=('0000'+str_prev)
-#     stored_value[-1]=str_current
-#     stored_value[-2]=str_prev
+
     while((stored_value[-2]-stored_value[-1]>=10 or stored_value[-2]-stored_value[-1]<=-10 ) and (k >= 1)):
         current_value = (str_current[i])
         prev_value = (str_prev[i])
@@ -239,13 +309,13 @@ def func(save_path, Filename):
             r = difference/p_sec
             f_rate.append(r)
 
-    #pdb.set_trace()
+#   pdb.set_trace()
     print(stored_value[-1])
     print(stored_value[-2])
     print(f_rate)
     print(stored_value[-2] - stored_value[-1])    
     
-    result_file = open('Himalaya_RF_1_Volume.txt', 'a')
+    result_file = open(access_csv(config_WM.device_id, "vol_file"),'a')	
     result_file.writelines([str(time)  + ' ' + str(stored_value[-1]) + '\n'])
     result_file.close()
     
@@ -253,32 +323,24 @@ def func(save_path, Filename):
     print(stored_value)
    
     
-    result_file = open('Himalaya_RF_1_Rate.txt', 'a')
+    result_file = open(access_csv(config_WM.device_id, "rate_file"), 'a')
     result_file.writelines([str(time)  + ' ' + str(f_rate[-1]) + '\n'])
     result_file.close()
-    
-    print("Thingspeak begins")
-    thingspeakHttp1 = BASE_URL + "&field1={:f}".format(stored_value[-1])
+    file_stored_value = str(stored_value[-1])
+    #write
+    print("Wrote on a file")
+    f = open('Variable.txt','w')
+    f.write(file_stored_value)
+    f.close()
+
+#write google-sheets, thingspeak or om2m code here   
     try:
-        conn = urlopen(thingspeakHttp1)
-        conn = urllib.request.urlopen(thingspeakHttp1)
-        print("water volume updated on thingspeak")
-        conn.close()
+        requests.get('https://script.google.com/macros/s/' + access_csv(config_WM.device_id, "gsheets") + '/exec?timestamp=%s&total_flow=%s&rate=%s'%(str(Filename[-1][3:-4]),str(stored_value[-1]),str(f_rate[-1])))
     except:
-        print("water volume not updated on thingspeak")
-    
-    if (cons >= 0):
-        print(f_rate[-1])
-        thingspeakHttp2 = BASE_URL + "&field2={:f}".format(f_rate[-1])
-        try:
-            conn = urlopen(thingspeakHttp2)
-            conn = urllib.request.urlopen(thingspeakHttp2)
-            print("flow rate updated on thingspeak")
-            conn.close()
-        except:
-            print("flow rate not updated on thingspeak")
+        print("Not send to google sheets")   
     cons+= 1
     #print(cons)
+    
 
 
 def send_email(sender_address,sender_pass,receiver_address,subject_text,save_path, Filename):
@@ -348,7 +410,13 @@ def main():
         while True:
         # set LED high
             print ("start")
-            subprocess.call("/home/pi/Desktop/waterspcrc/Ph-03/run_cmd_bash.sh")
+            subprocess.call("/home/pi/Desktop/waterspcrc/"+ access_csv(config_WM.device_id, "fileD")+"/run_cmd_bash.sh")
+            os.system("sudo /etc/init.d/ntp stop")
+            try:
+                os.system("sudo ntpdate " + access_csv(config_WM.device_id, 'time'))
+            except:
+                pass
+            os.system("sudo /etc/init.d/ntp start")
             print ("end")
             print("Setting high - LED ON")
             GPIO.output(relay_pin, GPIO.HIGH)
@@ -359,15 +427,16 @@ def main():
             # set LED low
             print("Setting low - LED OFF")
             GPIO.output(relay_pin, GPIO.LOW)
-            check = checkInternetSocket(host="8.8.8.8", port=53, timeout=3)
-            if(check==True):
-                send_email(sender_address,sender_pass,receiver_address,subject_text,save_path,Filename) 
-            else:
-                print("mail not sent")
+            
+            #check = checkInternetSocket(host="8.8.8.8", port=53, timeout=3)
+            #if(check==True):
+            #   send_email(sender_address,sender_pass,receiver_address,subject_text,save_path,Filename) 
+            #else:
+            #    print("mail not sent")
+            
             daterec = []
             func(save_path, Filename)
-            #os.remove(Filename)
-            #os.remove(save_path)
+            os.remove(save_path)
             wait()
     except KeyboardInterrupt:
         GPIO.cleanup()
@@ -379,8 +448,13 @@ if __name__ == '__main__':
     cons = 0
     f_rate = deque(5*[0], 5)
     Filename = deque(5*[0], 5)
-    stored_value.append(33875.3)
-    Filename.append("img2021-08-05-22-52-56.jpg")
+    print("read")
+    f = open('Variable.txt','r')
+    reading_file = f.read()
+    f.close()
+    reading_file=float(reading_file)
+    stored_value.append(reading_file)	#33875.3
+    Filename.append(str(datetime.datetime.now().strftime("img%Y-%m-%d-%H-%M-%S") + ".jpg"))
     main()
     
 
