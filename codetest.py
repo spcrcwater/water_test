@@ -306,7 +306,7 @@ def func(save_path, Filename):
             f2 = datetime.datetime.strptime(F2, '%Y-%m-%d-%H-%M-%S')
             time_difference = (f1 - f2)
             p_sec = (time_difference.seconds) / 60
-            r = difference/p_sec
+            r = round(difference/p_sec, 3)
             f_rate.append(r)
 
 #   pdb.set_trace()
