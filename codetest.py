@@ -409,6 +409,8 @@ def main():
     try:
         while True:
         # set LED high
+            t1 = int(time.time())
+            Filename.append(str(datetime.datetime.now().strftime("img%Y-%m-%d-%H-%M-%S") + ".jpg"))
             print ("start")
             subprocess.call("/home/pi/Desktop/waterspcrc/"+ access_csv(config_WM.device_id, "fileD")+"/run_cmd_bash.sh")
             os.system("sudo /etc/init.d/ntp stop")
@@ -420,7 +422,6 @@ def main():
             print ("end")
             print("Setting high - LED ON")
             GPIO.output(relay_pin, GPIO.HIGH)
-            Filename.append(str(datetime.datetime.now().strftime("img%Y-%m-%d-%H-%M-%S") + ".jpg"))
             save_path = '/home/pi/Desktop/images/' + str(Filename[-1])
             cam(save_path)
             time.sleep(3)
@@ -437,7 +438,13 @@ def main():
             daterec = []
             func(save_path, Filename)
             os.remove(save_path)
-            wait()
+            t2 = int(time.time())
+            # wait()
+            delay = 60 - (t2-t1)
+            if delay < 0:
+                delay = 0
+
+            time.sleep(delay)
     except KeyboardInterrupt:
         GPIO.cleanup()
     finally:
