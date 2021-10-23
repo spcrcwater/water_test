@@ -449,6 +449,7 @@ def main():
         GPIO.cleanup()
     finally:
         print("executed successfully")
+        os.system("sudo systemctl restart codetest.service")
 
 if __name__ == '__main__':
     stored_value = deque(5*[0], 5) # creating list 
