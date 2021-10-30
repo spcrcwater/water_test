@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 wget -q --spider http://google.com
 
