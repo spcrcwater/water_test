@@ -8,7 +8,7 @@ if [ $? -eq 0 ]
     cd /home/pi/Desktop/waterspcrc/Ph-03/
     git pull origin main
     cicomid_new=$(git rev-parse HEAD)
-    if[ cicomid -ne cicomid_new]
+    if [ cicomid -ne cicomid_new]
     then
       cicomid = cicomid_new
       sudo systemctl restart codetest.service
