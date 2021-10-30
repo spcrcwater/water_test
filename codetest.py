@@ -453,7 +453,18 @@ def main():
 
 if __name__ == '__main__':
     stored_value = deque(5*[0], 5) # creating list 
-  
+    cons = 0
+    f_rate = deque(5*[0], 5)
+    Filename = deque(5*[0], 5)
+    print("read")
+    f = open('Variable.txt','r')
+    reading_file = f.read()
+    f.close()
+    reading_file=float(reading_file)
+    stored_value.append(reading_file)	#33875.3
+    Filename.append(str(datetime.datetime.now().strftime("img%Y-%m-%d-%H-%M-%S") + ".jpg"))
+    time.sleep(1)
+    main()
     
 
 
